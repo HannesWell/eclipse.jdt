@@ -28,8 +28,8 @@ pipeline {
 				dir('org.eclipse.jdt.releng/patchbuild') {
 					sshagent(['projects-storage.eclipse.org-bot-ssh']) {
 						sh '''
-							PBUILD_DIR=/home/data/httpd/download.eclipse.org/jdt/updates/4.35-P-builds
-							ssh genie.jdt@projects-storage.eclipse.org mkdir -p ${PBUILD_DIR}
+							PBUILD_DIR=/home/data/httpd/download.eclipse.org/eclipse/try-outs/updates/4.35-P-builds
+							ssh genie.releng@projects-storage.eclipse.org mkdir -p ${PBUILD_DIR}
 							./build.sh
 						'''
 					}
