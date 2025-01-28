@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 ### BEGIN PARAMS
 if [ -z "$Y_BUILD" ]

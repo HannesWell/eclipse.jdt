@@ -1,0 +1,45 @@
+pipeline {
+	// The **P-build** is a patch build that contains modified plugins designed to be installed on top of the current I-build to test the new java version.
+	options {
+		timestamps()
+		timeout(time: 15, unit: 'MINUTES')
+		disableConcurrentBuilds(abortPrevious: true)
+		buildDiscarder(logRotator(numToKeepStr:'10'))
+	}
+	parameters {
+		string(name: 'Y_BUILD', description: '<b>required:</b> Full URL of a Y-Build')
+		string(name: 'SDKTIMESTAMP', description: "<b>required:</b> Timestamp of the SDK to build against (without any prefix like 'I', or 'v' ...)")
+		string(name: 'JDT_VERSION_MAX', description: '<b>required:</b>: Maximum version (exclusive) of the JDT feature, to which the patch should be applicable.')
+		string(name: 'SDKTAG', defaultValue: '', description: 'Tag of the SDK to build against, defaults to "I"+SDKTIMESTAMP.')
+		string(name: 'SDKVERSION', defaultValue: '', description: 'Version of the SDK to build gainst, defaults to SDKTAG')
+		string(name: 'DROPS_DIR', defaultValue: '', description: 'Relative directory where the SDK tar.gz is found below https://download.eclipse.org/eclipse/downloads/drops4<br>Defaults to SDKVERSION')
+		string(name: 'JDT_VERSION_RANGE', defaultValue: '', description: 'Full version range of the JDT feature, to which the patch should be applicable.<br>Currently defaults to "[3.20.100.v${SDKTIMESTAMP},${JDT_VERSION_MAX})"')
+	}
+	agent {
+		label 'basic'
+	}
+	tools {
+		jdk 'temurin-jdk21-latest'
+		ant 'apache-ant-latest'
+	}
+	stages {
+		stage('Build and deploy JDT Patch') {
+			steps {
+				dir('org.eclipse.jdt.releng/patchbuild') {
+					sshagent(['projects-storage.eclipse.org-bot-ssh']) {
+						sh '''
+							PBUILD_DIR=/home/data/httpd/download.eclipse.org/jdt/updates/4.35-P-builds
+							ssh genie.jdt@projects-storage.eclipse.org mkdir -p ${PBUILD_DIR}
+							./build.sh
+						'''
+					}
+				}
+			}
+		}
+	}
+	post {
+		always {
+			archiveArtifacts 'org.eclipse.jdt.releng/patchbuild/work/*.zip'
+		}
+	}
+}
